@@ -1,0 +1,26 @@
+{% load static %}
+<!-- admin_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <p>Welcome, {{ user.username }}! You are logged in as Admin.</p>
+
+    <h2>Admin Operations</h2>
+    <ul>
+        <li><a href="{% url 'list_books' %}">View All Books</a></li>
+        <li><a href="{% url 'add_book' %}">Add New Book</a></li>
+        <li><a href="{% url 'manage_users' %}">Manage Users</a></li>
+        <li><a href="{% url 'view_logs' %}">View System Logs</a></li>
+        <!-- Add more admin specific links here -->
+    </ul>
+
+    <p><a href="{% url 'logout' %}">Logout</a></p>
+</body>
+</html>
+ 

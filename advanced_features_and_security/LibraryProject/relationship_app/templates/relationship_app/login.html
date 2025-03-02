@@ -1,0 +1,25 @@
+{% load static %}
+<!-- login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Login</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}! You are logged in as {{ user.userprofile.role }}.</p>
+        <p><a href="{% url 'logout' %}">Logout</a></p>
+    {% else %}
+        <p>Not registered? <a href="{% url 'register' %}">Create an account</a>.</p>
+    {% endif %}
+</body>
+</html>

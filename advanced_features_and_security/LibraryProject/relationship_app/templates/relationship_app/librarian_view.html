@@ -1,0 +1,25 @@
+{% load static %}
+<!-- librarian_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Librarian Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Librarian Dashboard</h1>
+    <p>Welcome, {{ user.username }}! You are logged in as Librarian.</p>
+
+    <h2>Librarian Operations</h2>
+    <ul>
+        <li><a href="{% url 'list_books' %}">View All Books</a></li>
+        <li><a href="{% url 'add_book' %}">Add New Book</a></li>
+        <li><a href="{% url 'manage_books' %}">Manage Books</a></li>
+        <li><a href="{% url 'issue_book' %}">Issue Book</a></li>
+        <!-- Add more librarian-specific links here -->
+    </ul>
+
+    <p><a href="{% url 'logout' %}">Logout</a></p>
+</body>
+</html>
