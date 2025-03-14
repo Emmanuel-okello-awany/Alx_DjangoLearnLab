@@ -1,9 +1,8 @@
 from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import permission_required
 from .models import Article
+from .forms import ExampleForm
 
 @permission_required('your_app.can_view', raise_exception=True)
 def article_list(request):
@@ -63,3 +62,14 @@ def delete_book(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     book.delete()
     # Redirect or render response
+
+def example_form_view(request):
+    if request.method == "POST":
+        form = ExampleForm(request.POST)
+        if form.is_valid():
+            # Process the valid data (e.g., save it, send an email, etc.)
+            return render(request, "bookshelf/example_success.html", {"form": form})
+    else:
+        form = ExampleForm()
+
+    return render(request, "bookshelf/form_example.html", {"form": form})
