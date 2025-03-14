@@ -73,3 +73,7 @@ def example_form_view(request):
         form = ExampleForm()
 
     return render(request, "bookshelf/form_example.html", {"form": form})
+
+def book_list_view(request):
+    books = Book.objects.all()  # Get all books from the database
+    return render(request, "bookshelf/book_list.html", {"books": books})
