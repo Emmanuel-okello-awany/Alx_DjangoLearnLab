@@ -2,7 +2,8 @@ from django.shortcuts import render
 from .models import Book
 from .serializers import BookSerializer
 from django.utils import timezone  
-from rest_framework import generics, permissions, serializers  
+
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated  
  
 
 
@@ -20,7 +21,7 @@ class BookCreateView(generics.CreateAPIView):
     """Create a new book entry with validation."""
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         """Ensure publication_year is not in the future."""
@@ -33,7 +34,7 @@ class BookUpdateView(generics.UpdateAPIView):
     """Update book entry with validation."""
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def perform_update(self, serializer):
         """Validate the updated publication year."""
@@ -46,5 +47,5 @@ class BookDeleteView(generics.DestroyAPIView):
     """Delete a book entry. Requires authentication."""
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
