@@ -2,8 +2,9 @@ from django.shortcuts import render
 from .models import Book
 from .serializers import BookSerializer
 from django.utils import timezone  
-
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated  
+from rest_framework import generics,serializers ,filters
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated 
+from django_filters.rest_framework import DjangoFilterBackend 
  
 
 
@@ -12,6 +13,18 @@ class BookListView(generics.ListAPIView):
     """Retrieve all books."""
     queryset = Book.objects.all()
     serializer_class = BookSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    # Filtering options
+    filterset_fields = ['title', 'author__name', 'publication_year']
+
+    # Search options
+    search_fields = ['title', 'author__name']
+
+    # Ordering options
+    ordering_fields = ['title', 'publication_year']
+    ordering = ['title']  # Default ordering
+
 
 class BookDetailView(generics.RetrieveAPIView):
     """Retrieve a single book by ID."""
