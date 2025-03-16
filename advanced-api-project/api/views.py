@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import generics,serializers ,filters
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated 
 from django_filters.rest_framework import DjangoFilterBackend 
+from django_filters import rest_framework
  
 
 
