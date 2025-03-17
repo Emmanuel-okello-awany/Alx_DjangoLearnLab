@@ -7,10 +7,10 @@ from api.models import Book
 class BookAPITestCase(TestCase):
 
     def setUp(self):
-        """Set up test user and client session login."""
+        """Set up a test user and use session login."""
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.client.login(username='testuser', password='testpassword')  # Explicit login
+        self.client.login(username='testuser', password='testpassword')  # Ensure login
 
         self.book = Book.objects.create(title="Test Book", author="Test Author", publication_year=2023)
 
