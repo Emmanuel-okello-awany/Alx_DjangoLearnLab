@@ -1,0 +1,14 @@
+<!-- blog/create_comment.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h1>Add a Comment</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-success">Submit Comment</button>
+    </form>
+    <a href="{% url 'blog:post_detail' post_id=post.id %}" class="btn btn-secondary">Back to Post</a>
+  </div>
+{% endblock %}

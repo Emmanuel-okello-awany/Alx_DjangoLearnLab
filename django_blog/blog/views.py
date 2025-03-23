@@ -146,3 +146,71 @@ def posts_by_tag(request, tag_slug):
     tag = get_object_or_404(Tag, slug=tag_slug)
     posts = Post.objects.filter(tags=tag)
     return render(request, 'blog/posts_by_tag.html', {'tag': tag, 'posts': posts})
+
+
+
+# blog/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.generic import CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Post, Comment
+from .forms import CommentForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.forms import UserChangeForm
+
+# Create Comment
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/create_comment.html'
+
+    def form_valid(self, form):
+        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
+        form.instance.author = self.request.user
+        form.instance.post = post
+        messages.success(self.request, "Comment added successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        post_id = self.kwargs['post_id']
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': post_id})
+
+
+# Update Comment
+class CommentUpdateView(LoginRequiredMixin, UpdateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/edit_comment.html'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(author=self.request.user)  # Ensures only the comment's author can edit
+
+    def form_valid(self, form):
+        messages.success(self.request, "Comment updated successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.post.id})
+
+
+# Delete Comment
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Comment
+    template_name = 'blog/delete_comment.html'
+    context_object_name = 'comment'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(author=self.request.user)  # Ensures only the comment's author can delete
+
+    def delete(self, request, *args, **kwargs):
+        comment = self.get_object()
+        post_id = comment.post.id
+        messages.success(self.request, "Comment deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.post.id})
