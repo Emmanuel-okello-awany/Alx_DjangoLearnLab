@@ -1,64 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
-from .models import Post, Comment
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
+from .models import Post, Comment, Tag
 from .forms import RegisterForm, CommentForm, PostForm
 
 # Home View - Lists All Posts
-def home(request):
-    posts = Post.objects.all().order_by('-published_date')
-    return render(request, 'blog/home.html', {'posts': posts})
-
-# User Registration
-def register(request):
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful. Welcome, {}!".format(user.username))
-            return redirect('home')
-        else:
-            messages.error(request, "Registration failed. Please check your details.")
-    else:
-        form = RegisterForm()
-
-    return render(request, 'blog/register.html', {'form': form})
-
-# User Login
-def login_view(request):
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, "Login successful! Welcome back, {}.".format(user.username))
-            return redirect('home')
-        else:
-            messages.error(request, "Invalid username or password.")
-
-    form = AuthenticationForm()
-    return render(request, 'blog/login.html', {'form': form})
-
-# User Logout
-def logout_view(request):
-    logout(request)
-    messages.info(request, "You have successfully logged out.")
-    return redirect('login')
-
-# List of Posts
-def post_list(request):
-    posts = Post.objects.all()
-    return render(request, 'blog/post_list.html', {'posts': posts})
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/home.html'
+    context_object_name = 'posts'
+    ordering = ['-published_date']
 
 # Post Detail & Comment Creation
-def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    comments = post.comments.all()
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'blog/post_detail.html'
+    context_object_name = 'post'
 
-    if request.method == 'POST' and request.user.is_authenticated:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comments'] = self.object.comments.all()
+        context['form'] = CommentForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
         form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -66,88 +36,82 @@ def post_detail(request, post_id):
             comment.author = request.user
             comment.save()
             messages.success(request, "Comment added successfully!")
-            return redirect('post_detail', post_id=post.id)
-    else:
-        form = CommentForm()
-
-    return render(request, 'blog/post_detail.html', {
-        'post': post,
-        'comments': comments,
-        'form': form
-    })
+            return redirect('blog:post_detail', pk=post.id)
+        return self.get(request, *args, **kwargs)
 
 # Create a New Post
-@login_required
-def create_post(request):
-    if request.method == 'POST':
-        form = PostForm(request.POST)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.save()
-            messages.success(request, "Post created successfully!")
-            return redirect('post_list')
-    else:
-        form = PostForm()
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create_post.html'
+    success_url = reverse_lazy('blog:home')
 
-    return render(request, 'blog/create_post.html', {'form': form})
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
-# Update a Post
-@login_required
-def edit_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id, author=request.user)
+# Update an Existing Post
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/edit_post.html'
+    success_url = reverse_lazy('blog:home')
 
-    if request.method == 'POST':
-        form = PostForm(request.POST, instance=post)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Post updated successfully!")
-            return redirect('post_detail', post_id=post.id)
-    else:
-        form = PostForm(instance=post)
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
-    return render(request, 'blog/edit_post.html', {'form': form})
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
 
 # Delete a Post
-@login_required
-def delete_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id, author=request.user)
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = 'blog/delete_post.html'
+    success_url = reverse_lazy('blog:home')
 
-    if request.method == 'POST':
-        post.delete()
-        messages.success(request, "Post deleted successfully!")
-        return redirect('post_list')
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
 
-    return render(request, 'blog/delete_post.html', {'post': post})
-
-# Edit a Comment
-@login_required
-def edit_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id, author=request.user)
-
-    if request.method == 'POST':
-        form = CommentForm(request.POST, instance=comment)
+# User Registration (Function-Based View)
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Comment updated successfully!")
-            return redirect('post_detail', post_id=comment.post.id)
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful. Welcome, {}!".format(user.username))
+            return redirect('blog:home')
+        else:
+            messages.error(request, "Registration failed. Please check your details.")
     else:
-        form = CommentForm(instance=comment)
+        form = RegisterForm()
 
-    return render(request, 'blog/edit_comment.html', {'form': form})
+    return render(request, 'blog/register.html', {'form': form})
 
-# Delete a Comment
-@login_required
-def delete_comment(request, comment_id):
-    comment = get_object_or_404(Comment, id=comment_id, author=request.user)
+# User Login (Function-Based View)
+def login_view(request):
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, "Login successful! Welcome back, {}.".format(user.username))
+            return redirect('blog:home')
+        else:
+            messages.error(request, "Invalid username or password.")
+    else:
+        form = AuthenticationForm()
 
-    if request.method == 'POST':
-        post_id = comment.post.id
-        comment.delete()
-        messages.success(request, "Comment deleted successfully!")
-        return redirect('post_detail', post_id=post_id)
+    return render(request, 'blog/login.html', {'form': form})
 
-    return render(request, 'blog/delete_comment.html', {'comment': comment})
+# User Logout (Function-Based View)
+def logout_view(request):
+    logout(request)
+    messages.info(request, "You have successfully logged out.")
+    return redirect('blog:login')
 
 # User Profile View - To View and Edit Profile
 @login_required
@@ -157,17 +121,13 @@ def profile(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Your profile has been updated.")
-            return redirect('profile')
+            return redirect('blog:profile')
     else:
         form = UserChangeForm(instance=request.user)
 
     return render(request, 'blog/profile.html', {'form': form})
 
-def posts_by_tag(request, tag_slug):
-    tag = get_object_or_404(Tag, slug=tag_slug)
-    posts = Post.objects.filter(tags=tag)
-    return render(request, 'blog/posts_by_tag.html', {'tag': tag, 'posts': posts})
-
+# Search Posts
 def search_posts(request):
     query = request.GET.get('q')
     if query:
@@ -180,3 +140,9 @@ def search_posts(request):
         posts = Post.objects.all()
 
     return render(request, 'blog/search_results.html', {'posts': posts, 'query': query})
+
+# Posts by Tag
+def posts_by_tag(request, tag_slug):
+    tag = get_object_or_404(Tag, slug=tag_slug)
+    posts = Post.objects.filter(tags=tag)
+    return render(request, 'blog/posts_by_tag.html', {'tag': tag, 'posts': posts})

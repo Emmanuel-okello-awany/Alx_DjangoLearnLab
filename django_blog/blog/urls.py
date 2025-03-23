@@ -10,6 +10,9 @@ urlpatterns = [
     path('post/<int:pk>/edit/', views.PostUpdateView.as_view(), name='edit_post'),
     path('post/<int:pk>/delete/', views.PostDeleteView.as_view(), name='delete_post'),
     path('profile/', views.profile, name='profile'),
+    path('register/', views.register, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     path('search/', views.search_posts, name='search_posts'),
     path('tag/<slug:tag_slug>/', views.posts_by_tag, name='posts_by_tag'),
 ]
