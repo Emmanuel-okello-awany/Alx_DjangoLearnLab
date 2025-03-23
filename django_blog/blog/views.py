@@ -2,16 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
 from .models import Post, Comment
 from .forms import RegisterForm, CommentForm, PostForm
-from django.contrib.auth.forms import AuthenticationForm
-
 
 # Home View - Lists All Posts
 def home(request):
     posts = Post.objects.all().order_by('-published_date')
     return render(request, 'blog/home.html', {'posts': posts})
-
 
 # User Registration
 def register(request):
@@ -29,7 +27,6 @@ def register(request):
 
     return render(request, 'blog/register.html', {'form': form})
 
-
 # User Login
 def login_view(request):
     if request.method == "POST":
@@ -45,19 +42,16 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, 'blog/login.html', {'form': form})
 
-
 # User Logout
 def logout_view(request):
     logout(request)
     messages.info(request, "You have successfully logged out.")
     return redirect('login')
 
-
 # List of Posts
 def post_list(request):
     posts = Post.objects.all()
     return render(request, 'blog/post_list.html', {'posts': posts})
-
 
 # Post Detail & Comment Creation
 def post_detail(request, post_id):
@@ -82,7 +76,6 @@ def post_detail(request, post_id):
         'form': form
     })
 
-
 # Create a New Post
 @login_required
 def create_post(request):
@@ -98,7 +91,6 @@ def create_post(request):
         form = PostForm()
 
     return render(request, 'blog/create_post.html', {'form': form})
-
 
 # Update a Post
 @login_required
@@ -116,7 +108,6 @@ def edit_post(request, post_id):
 
     return render(request, 'blog/edit_post.html', {'form': form})
 
-
 # Delete a Post
 @login_required
 def delete_post(request, post_id):
@@ -128,7 +119,6 @@ def delete_post(request, post_id):
         return redirect('post_list')
 
     return render(request, 'blog/delete_post.html', {'post': post})
-
 
 # Edit a Comment
 @login_required
@@ -146,7 +136,6 @@ def edit_comment(request, comment_id):
 
     return render(request, 'blog/edit_comment.html', {'form': form})
 
-
 # Delete a Comment
 @login_required
 def delete_comment(request, comment_id):
@@ -159,6 +148,20 @@ def delete_comment(request, comment_id):
         return redirect('post_detail', post_id=post_id)
 
     return render(request, 'blog/delete_comment.html', {'comment': comment})
+
+# User Profile View - To View and Edit Profile
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        form = UserChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated.")
+            return redirect('profile')
+    else:
+        form = UserChangeForm(instance=request.user)
+
+    return render(request, 'blog/profile.html', {'form': form})
 
 def posts_by_tag(request, tag_slug):
     tag = get_object_or_404(Tag, slug=tag_slug)
