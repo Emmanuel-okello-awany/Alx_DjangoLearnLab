@@ -1,9 +1,8 @@
+# blog/admin.py
 from django.contrib import admin
-from .models import Post, Comment
+from .models import Post, Comment, Tag
 
-# Register Post model
 admin.site.register(Post)
-
-# Register Comment model
 admin.site.register(Comment)
+admin.site.register(Tag)
 
