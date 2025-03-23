@@ -16,8 +16,9 @@ urlpatterns = [
     path('search/', views.search_posts, name='search_posts'),
     path('tag/<slug:tag_slug>/', views.posts_by_tag, name='posts_by_tag'),
 
+
         # Comment CRUD URLs
-    path('post/<int:post_id>/comments/new/', views.CommentCreateView.as_view(), name='create_comment'),
-    path('comment/<int:pk>/edit/', views.CommentUpdateView.as_view(), name='edit_comment'),
-    path('comment/<int:pk>/delete/', views.CommentDeleteView.as_view(), name='delete_comment')
+    path('post/<int:post_id>/comments/new/', views.CommentCreateView.as_view(), name='create_comment'),  # Creating a comment
+    path('comment/<int:pk>/edit/', views.CommentUpdateView.as_view(), name='edit_comment'),  # Editing a comment
+    path('comment/<int:pk>/delete/', views.CommentDeleteView.as_view(), name='delete_comment
 ]
