@@ -1,12 +1,14 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
+from django.shortcuts import get_object_or_404
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
+User = get_user_model()  # Ensure we are using the custom user model
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -35,3 +37,19 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def follow_user(request, user_id):
+    """Allows an authenticated user to follow another user."""
+    target_user = get_object_or_404(User, id=user_id)  # Use get_user_model() instead of CustomUser
+    request.user.following.add(target_user)  # Use the following ManyToMany field
+    return Response({"message": f"You are now following {target_user.username}"}, status=200)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def unfollow_user(request, user_id):
+    """Allows an authenticated user to unfollow another user."""
+    target_user = get_object_or_404(User, id=user_id)  # Use get_user_model() instead of CustomUser
+    request.user.following.remove(target_user)  # Use the following ManyToMany field
+    return Response({"message": f"You have unfollowed {target_user.username}"}, status=200)
